@@ -1,0 +1,11 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const employee_1 = require("./employee");
+console.log("Count: ", employee_1.Employee.getCount());
+const emp = new employee_1.Employee(1, "Anil", 8000);
+console.log(emp.id);
+console.log(emp.name);
+console.log(emp.salary);
+emp.location = "Mumbai";
+console.log(emp.location);
+console.log("Count: ", employee_1.Employee.getCount());

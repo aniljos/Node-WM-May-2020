@@ -1,0 +1,9 @@
+{
+    "compilerOptions": {
+        "target": "es6",
+        "rootDir": "./src",
+        "outDir": "./build",
+        "noEmitOnError": true,
+        "module": "CommonJS"
+    }
+}
