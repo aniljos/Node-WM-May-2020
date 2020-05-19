@@ -1,10 +1,30 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Document</title>
+    <script>
+
+        async function getProducts() {
+
+            try{
+                var url = "http://localhost:9000/products";
+                const resp = await fetch(url);
+                const data = await resp.json();
+                console.log(data);
+            }catch(err){
+                console.log("Error", err);
+            }
+        }
+        getProducts();
+
+
+    </script>
+
 </head>
+
 <body>
     <h2>Node Express Application</h2>
 
@@ -12,4 +32,5 @@
         {{message}}
     </p>
 </body>
+
 </html>

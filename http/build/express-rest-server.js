@@ -4,6 +4,8 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
+const body_parser_1 = __importDefault(require("body-parser"));
+const url_1 = __importDefault(require("url"));
 const product_1 = require("./model/product");
 const app = express_1.default();
 const PORT = 9000;
@@ -15,6 +17,19 @@ function load() {
     products.push(new product_1.Product(3, "Xbox One", 35000, "Gaming"));
 }
 load();
+//Middleware(intercepts the request==> preprocessing)
+app.use((req, resp, next) => {
+    console.log("In middleware", req.originalUrl);
+    next();
+});
+//Enable CORS
+app.use((req, resp, next) => {
+    resp.setHeader("Access-Control-Allow-Origin", "*");
+    resp.setHeader("Access-Control-Allow-Methods", "*");
+    resp.setHeader("Access-Control-Allow-Headers", "*");
+    next();
+});
+app.use(body_parser_1.default.json());
 app.get("/products", (req, resp) => {
     resp.json(products);
 });
@@ -29,6 +44,45 @@ app.get("/products/:id", (req, resp) => {
     else {
         resp.status(404).send("Product not Found");
     }
+});
+//create a new product
+app.post("/products", (req, resp) => {
+    // Validate the product ==> not valid ==> status: 400(Bad request)
+    // Valid product ==> update the data-store => status: 201(Created)
+    // Error is saving ==> status: 500(ISR)
+    try {
+        const product = req.body;
+        const index = products.findIndex(item => item.id === product.id);
+        if (index === -1) {
+            products.push(product);
+            const productUrl = url_1.default.format({
+                protocol: req.protocol,
+                host: req.hostname,
+                pathname: req.originalUrl + "/" + product.id
+            });
+            resp.status(201).setHeader("location", productUrl);
+            resp.end();
+        }
+        else {
+            //No Valid
+            resp.status(400).send();
+        }
+    }
+    catch (error) {
+        //error
+        resp.status(500).send();
+    }
+});
+app.delete("/products/:id", (req, resp) => {
+    //id exists ==> remove status: 200
+    // not exist  ==>  status: 404
+    // error ==> 500
+});
+app.put("/products", (req, resp) => {
+    // product not found == 404
+    // is found and valid ==> update ==> 200
+    // invalid ==> 400
+    // error ==> 500
 });
 app.listen(PORT, () => {
     console.log(`REST API running on port ${PORT}`);
