@@ -21,6 +21,14 @@ user = {
 };
 
 
+//var i; //any
+
+//var i: number;
+
+//var i = 10; // type inference
+
+
+
 
 
 

@@ -8,6 +8,8 @@ interface Vehicle{
     print(): void;
 
 }
+
+
 class Car implements Vehicle{
 
     name: string;
