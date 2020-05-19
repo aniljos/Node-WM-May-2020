@@ -6,7 +6,8 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "express": "nodemon express-server.js",
-    "tsc": "tsc"
+    "tsc": "tsc -w",
+    "rest": "nodemon build/express-rest-server.js"
   },
   "keywords": [],
   "author": "",
