@@ -18,27 +18,78 @@ var __importStar = (this && this.__importStar) || function (mod) {
     __setModuleDefault(result, mod);
     return result;
 };
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
 const body_parser_1 = __importDefault(require("body-parser"));
-const url_1 = __importDefault(require("url"));
-const product_1 = require("./model/product");
 const child_process_1 = __importDefault(require("child_process"));
+const socket_io_1 = __importDefault(require("socket.io"));
+const http_1 = __importDefault(require("http"));
 const cors_1 = __importDefault(require("cors"));
 const authController = __importStar(require("./controller/AuthController"));
+const mongodb_1 = __importDefault(require("mongodb"));
+//express (http: 9000)
 const app = express_1.default();
-const PORT = process.env.PORT || 9000;
+//web server
+const server = http_1.default.createServer(app);
+//web socket (9000)
+const io = socket_io_1.default(server);
+const PORT = 9000;
+const mongoClient = mongodb_1.default.MongoClient;
+var allSockets = [];
+io.on("connection", (socket) => {
+    allSockets.push(socket);
+    console.log("Client connected...");
+    socket.emit("data", "Some data...");
+});
 let products;
-function load() {
-    products = new Array();
-    products.push(new product_1.Product(1, "IPhone 11", 80000, "Mobiles"));
-    products.push(new product_1.Product(2, "Dell Inspiron", 6000, "Laptops"));
-    products.push(new product_1.Product(3, "Xbox One", 35000, "Gaming"));
+function loadData() {
+    return __awaiter(this, void 0, void 0, function* () {
+        try {
+            const mongoUrl = "mongodb://localhost";
+            const client = yield mongoClient.connect(mongoUrl, { useUnifiedTopology: true });
+            yield client.connect();
+            const collection = yield client.db('productsdb').collection('products');
+            const results = yield collection.find({}).toArray();
+            return results;
+        }
+        catch (error) {
+            console.log("error", error);
+            return [];
+        }
+    });
 }
-load();
+function saveProduct(product) {
+    return __awaiter(this, void 0, void 0, function* () {
+        try {
+            const mongoUrl = "mongodb://localhost";
+            const client = yield mongoClient.connect(mongoUrl, { useUnifiedTopology: true });
+            yield client.connect();
+            const collection = yield client.db('productsdb').collection('products');
+            collection.save(product, (err, result) => {
+                if (err) {
+                    throw err;
+                }
+                return result.result;
+            });
+        }
+        catch (error) {
+            console.log("error", error);
+            throw error;
+        }
+    });
+}
 //Middleware(intercepts the request==> preprocessing)
 app.use((req, resp, next) => {
     console.log(`In middleware ${req.originalUrl} , process id: ${process.pid}`);
@@ -53,12 +104,17 @@ app.use(cors_1.default());
 //     next();
 // })
 app.use(body_parser_1.default.json());
-app.use("/products", authController.authorizeProducts);
+//app.use("/products", authController.authorizeProducts);
 app.post("/login", authController.loginAction);
-app.post("/refreshToken", authController.refreshToken);
-app.get("/products", (req, resp) => {
-    resp.json(products);
-});
+app.get("/products", (req, resp) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const products = yield loadData();
+        resp.json(products);
+    }
+    catch (error) {
+        resp.sendStatus(500);
+    }
+}));
 app.get("/products/:id", (req, resp) => {
     //Product exist ==> product status: 200(OK)
     // No product ==> null status: 404(Not Found)
@@ -72,33 +128,25 @@ app.get("/products/:id", (req, resp) => {
     }
 });
 //create a new product
-app.post("/products", (req, resp) => {
+app.post("/products", (req, resp) => __awaiter(void 0, void 0, void 0, function* () {
     // Validate the product ==> not valid ==> status: 400(Bad request)
     // Valid product ==> update the data-store => status: 201(Created)
     // Error is saving ==> status: 500(ISR)
     try {
         const product = req.body;
-        const index = products.findIndex(item => item.id === product.id);
-        if (index === -1) {
-            products.push(product);
-            const productUrl = url_1.default.format({
-                protocol: req.protocol,
-                host: req.hostname,
-                pathname: req.originalUrl + "/" + product.id
-            });
-            resp.status(201).setHeader("location", productUrl);
-            resp.end();
-        }
-        else {
-            //No Valid
-            resp.status(400).send();
-        }
+        //const index = products.findIndex(item => item.id === product.id);
+        yield saveProduct(product);
+        allSockets.forEach(socket => {
+            socket.emit("product", product);
+        });
+        resp.sendStatus(200);
     }
     catch (error) {
         //error
+        console.log(error);
         resp.status(500).send();
     }
-});
+}));
 app.delete("/products/:id", (req, resp) => {
     //id exists ==> remove status: 200
     // not exist  ==>  status: 404
@@ -154,6 +202,6 @@ app.get("/task", (req, resp) => {
 app.get("/crash", () => {
     process.exit();
 });
-app.listen(PORT, () => {
+server.listen(PORT, () => {
     console.log(`REST API running on port ${PORT} with process id: ${process.pid}`);
 });

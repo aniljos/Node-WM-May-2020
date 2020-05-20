@@ -5,10 +5,32 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Document</title>
+    <script src="http://localhost:9000/socket.io/socket.io.js"></script>
     <script>
 
         const url = "http://localhost:9000";
+        //const url = "https://aj-hello.azurewebsites.net";
         let loginRespData;
+
+        function connectToSocketIO(){
+
+            var socket = io(url);
+                socket.on('connect', function(){
+                    console.log("Connected to server..");
+
+                    socket.on('data', function(data){
+                        console.log(data);
+                    })
+                    socket.on('product', function(product){
+                        console.log(product);
+                    })
+                });
+
+        }
+        connectToSocketIO();
+
+
+
 
         async function login() {
 
@@ -67,7 +89,27 @@
                 console.log("Error", err);
             }
         }
-        //getProducts();
+    
+        async function refreshToken(){
+            try{
+                var refreshUrl = url + "/refreshToken";
+                const resp = await fetch(refreshUrl, {
+                    method: "post",
+                    body: JSON.stringify({token: loginRespData.refreshToken}),
+                    headers: {
+                        "Content-Type": "application/json"
+                    }
+                });
+                const data = await resp.json();
+                console.log("new token", data);
+                loginRespData.accessToken = data.accessToken;    
+            }
+            catch(err){
+
+                console.log("Error", err);
+
+            }
+        }
 
 
     </script>
@@ -84,8 +126,13 @@
     <div>
         <button onclick="getProducts();">Load Products</button>
     </div>
+    <br/>
     <div>
         <button onclick="invokeTask();">Invoke Task</button>
+    </div>
+    <br/>
+     <div>
+        <button onclick="refreshToken()">Refresh Token</button>
     </div>
 </body>
 

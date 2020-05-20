@@ -1,0 +1,5 @@
+{
+    "appService.showBuildDuringDeployPrompt": false,
+    "appService.defaultWebAppToDeploy": "/subscriptions/0b19f115-7549-4b0a-8ee4-e1e9b061c2ae/resourceGroups/appsvc_linux_centralus/providers/Microsoft.Web/sites/aj-hello",
+    "appService.deploySubpath": ""
+}

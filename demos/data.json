@@ -1,0 +1,27 @@
+{
+    "webchat": {
+      "text": [
+        "What else can I help you with today?"
+      ],
+      "buttons": {
+        "button": [
+          {
+            "value": "Paying for Coverage",
+            "text": "Paying for Coverage",
+            "classname": "btn-wrapper"
+          },
+          {
+            "text": "General Questions",
+            "classname": "btn-wrapper-btn",
+            "value": "General Questions"
+          },
+          {
+            "text": "I don't need anything",
+            "classname": "btn-wrapper",
+            "showvalue": "false",
+            "value": "feedback"
+          }
+        ]
+      }
+    }
+  }

@@ -27,10 +27,23 @@ const body_parser_1 = __importDefault(require("body-parser"));
 const url_1 = __importDefault(require("url"));
 const product_1 = require("./model/product");
 const child_process_1 = __importDefault(require("child_process"));
+const socket_io_1 = __importDefault(require("socket.io"));
+const http_1 = __importDefault(require("http"));
 const cors_1 = __importDefault(require("cors"));
 const authController = __importStar(require("./controller/AuthController"));
+//express (http: 9000)
 const app = express_1.default();
-const PORT = process.env.PORT || 9000;
+//web server
+const server = http_1.default.createServer(app);
+//web socket (9000)
+const io = socket_io_1.default(server);
+const PORT = 9000;
+var allSockets = [];
+io.on("connection", (socket) => {
+    allSockets.push(socket);
+    console.log("Client connected...");
+    socket.emit("data", "Some data...");
+});
 let products;
 function load() {
     products = new Array();
@@ -53,9 +66,8 @@ app.use(cors_1.default());
 //     next();
 // })
 app.use(body_parser_1.default.json());
-app.use("/products", authController.authorizeProducts);
+//app.use("/products", authController.authorizeProducts);
 app.post("/login", authController.loginAction);
-app.post("/refreshToken", authController.refreshToken);
 app.get("/products", (req, resp) => {
     resp.json(products);
 });
@@ -85,6 +97,9 @@ app.post("/products", (req, resp) => {
                 protocol: req.protocol,
                 host: req.hostname,
                 pathname: req.originalUrl + "/" + product.id
+            });
+            allSockets.forEach(socket => {
+                socket.emit("product", product);
             });
             resp.status(201).setHeader("location", productUrl);
             resp.end();
@@ -154,6 +169,6 @@ app.get("/task", (req, resp) => {
 app.get("/crash", () => {
     process.exit();
 });
-app.listen(PORT, () => {
+server.listen(PORT, () => {
     console.log(`REST API running on port ${PORT} with process id: ${process.pid}`);
 });

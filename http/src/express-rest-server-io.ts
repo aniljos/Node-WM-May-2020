@@ -1,14 +1,35 @@
 import express from 'express';
 import bodyParser from 'body-parser';
 import url from 'url';
+
 import { Product } from './model/product';
 import { setTimeout } from 'timers';
 import childProcess from 'child_process';
+import socketIO from 'socket.io';
+
+import http from 'http';
 import cors from 'cors';
 import * as authController from './controller/AuthController';
 
+//express (http: 9000)
 const app = express();
-const PORT = process.env.PORT || 9000;
+//web server
+const server = http.createServer(app);
+//web socket (9000)
+const io = socketIO(server);
+
+const PORT = 9000;
+
+
+var allSockets: Array<socketIO.Socket> = [];
+io.on("connection", (socket) => {
+
+    allSockets.push(socket);
+    console.log("Client connected...");
+    socket.emit("data", "Some data...");
+})
+
+
 
 let products: Array<Product>;
 
@@ -26,10 +47,9 @@ app.use((req, resp, next) => {
     console.log(`In middleware ${req.originalUrl} , process id: ${process.pid}`);
     next();
 });
-
-
 //Enable CORS
-    app.use(cors());
+
+app.use(cors());
 
 // app.use((req, resp, next) => {
 
@@ -42,10 +62,9 @@ app.use((req, resp, next) => {
 
 app.use(bodyParser.json());
 
-app.use("/products", authController.authorizeProducts);
+//app.use("/products", authController.authorizeProducts);
 
 app.post("/login", authController.loginAction);
-app.post("/refreshToken", authController.refreshToken);
 
 
 app.get("/products", (req, resp) => {
@@ -86,6 +105,12 @@ app.post("/products", (req, resp) => {
                 host: req.hostname,
                 pathname: req.originalUrl + "/" + product.id
             });
+
+            allSockets.forEach(socket => {
+                socket.emit("product", product);
+            })
+
+
             resp.status(201).setHeader("location", productUrl);
             resp.end();
 
@@ -182,7 +207,7 @@ app.get("/crash", () => {
 })
 
 
-app.listen(PORT, () => {
+server.listen(PORT, () => {
     console.log(`REST API running on port ${PORT} with process id: ${process.pid}`);
-})
+});
 
