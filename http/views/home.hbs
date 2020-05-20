@@ -7,25 +7,63 @@
     <title>Document</title>
     <script>
 
+        const url = "http://localhost:9000";
+        let loginRespData;
+
+        async function login() {
+
+            try {
+
+                var loginUrl = url + "/login";
+                var user = { name: "sachin", password: "t_sachin" }
+                const loginResp = await fetch(loginUrl, {
+                    method: "post",
+                    body: JSON.stringify(user),
+                    headers: { "Content-Type": "application/json" }
+                });
+                loginRespData = await loginResp.json();
+                console.log(loginRespData);
+
+
+
+            } catch (err) {
+                console.log("Error", err);
+            }
+        }
+        login();
+
+
+
+
+
+
+
         async function getProducts() {
 
-            try{
-                var url = "http://localhost:9000/products";
-                const resp = await fetch(url);
+            try {
+                var productsUrl = url + "/products";
+                const resp = await fetch(productsUrl, {
+                    headers: {
+                        Authorization: "Bearer " + loginRespData.accessToken
+                    }
+                });
                 const data = await resp.json();
                 console.log(data);
-            }catch(err){
-                console.log("Error", err);
+            }
+            catch (err) {
+
+                console.log("Error", err.status);
+
             }
         }
         async function invokeTask() {
 
-            try{
+            try {
                 var url = "http://localhost:9000/task";
                 const resp = await fetch(url);
                 const data = await resp.json();
                 console.log(data);
-            }catch(err){
+            } catch (err) {
                 console.log("Error", err);
             }
         }

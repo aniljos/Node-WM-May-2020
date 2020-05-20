@@ -12,7 +12,7 @@ if (cluster_1.default.isMaster) {
     for (let i = 0; i < cpus; i++) {
         cluster_1.default.fork();
     }
-    cluster_1.default.on("error", (worker) => {
+    cluster_1.default.on("exit", (worker) => {
         console.log(`Worker crashed: ${worker.id}`);
         cluster_1.default.fork();
     });

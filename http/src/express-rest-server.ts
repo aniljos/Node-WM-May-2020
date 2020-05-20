@@ -167,7 +167,7 @@ app.get("/task", (req, resp) => {
 
 app.get("/crash", () => {
 
-    throw "";
+    process.exit();
 })
 
 

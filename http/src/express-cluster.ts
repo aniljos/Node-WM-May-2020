@@ -13,7 +13,7 @@ if(cluster.isMaster){
         cluster.fork();        
     
     }
-    cluster.on("error", (worker)=> {
+    cluster.on("exit", (worker)=> {
 
         console.log(`Worker crashed: ${worker.id}`);
         cluster.fork();
