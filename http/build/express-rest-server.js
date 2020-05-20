@@ -7,6 +7,7 @@ const express_1 = __importDefault(require("express"));
 const body_parser_1 = __importDefault(require("body-parser"));
 const url_1 = __importDefault(require("url"));
 const product_1 = require("./model/product");
+const child_process_1 = __importDefault(require("child_process"));
 const app = express_1.default();
 const PORT = 9000;
 let products;
@@ -19,7 +20,7 @@ function load() {
 load();
 //Middleware(intercepts the request==> preprocessing)
 app.use((req, resp, next) => {
-    console.log("In middleware", req.originalUrl);
+    console.log(`In middleware ${req.originalUrl} , process id: ${process.pid}`);
     next();
 });
 //Enable CORS
@@ -77,13 +78,57 @@ app.delete("/products/:id", (req, resp) => {
     //id exists ==> remove status: 200
     // not exist  ==>  status: 404
     // error ==> 500
+    const id = req.params.id;
+    try {
+        const index = products.findIndex(item => item.id === parseInt(id));
+        if (index !== -1) {
+            products.splice(index, 1);
+            resp.status(200).send();
+        }
+        else {
+            resp.status(404).send();
+        }
+    }
+    catch (error) {
+        resp.status(500).send();
+    }
 });
 app.put("/products", (req, resp) => {
     // product not found == 404
     // is found and valid ==> update ==> 200
     // invalid ==> 400
     // error ==> 500
+    try {
+        const product = req.body;
+        const index = products.findIndex(item => item.id === product.id);
+        if (index !== -1) {
+            products[index] = product;
+            resp.status(200).send();
+        }
+        else {
+            resp.status(404).send();
+        }
+    }
+    catch (error) {
+        resp.status(500).send();
+    }
+});
+app.get("/task", (req, resp) => {
+    //resp.send("Hello");
+    // setTimeout(() => {
+    //     resp.send("Hello Again");
+    // }, 2000);
+    const cProcess = child_process_1.default.fork(__dirname + '/child/compute');
+    //receiving message send by the child process
+    cProcess.on("message", (data) => {
+        resp.json({ data: data });
+    });
+    //send message back to the child process
+    cProcess.send("hello");
+});
+app.get("/crash", () => {
+    throw "";
 });
 app.listen(PORT, () => {
-    console.log(`REST API running on port ${PORT}`);
+    console.log(`REST API running on port ${PORT} with process id: ${process.pid}`);
 });

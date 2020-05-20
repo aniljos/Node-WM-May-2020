@@ -18,7 +18,18 @@
                 console.log("Error", err);
             }
         }
-        getProducts();
+        async function invokeTask() {
+
+            try{
+                var url = "http://localhost:9000/task";
+                const resp = await fetch(url);
+                const data = await resp.json();
+                console.log(data);
+            }catch(err){
+                console.log("Error", err);
+            }
+        }
+        //getProducts();
 
 
     </script>
@@ -31,6 +42,13 @@
     <p>
         {{message}}
     </p>
+
+    <div>
+        <button onclick="getProducts();">Load Products</button>
+    </div>
+    <div>
+        <button onclick="invokeTask();">Invoke Task</button>
+    </div>
 </body>
 
 </html>
