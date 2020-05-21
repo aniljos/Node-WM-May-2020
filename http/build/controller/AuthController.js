@@ -8,7 +8,7 @@ const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 let users;
 const JWT_ACCESS_TOKEN_SECRET = "a7bffd9133b5abc893cfce78c2973a0fcd1a8307dca3334209d4951a53bc0c9b1fd9113ef3b238aaa4297985ba4e4fdee6e7d99d880c2a3ff3c39b16bcd2907a";
 const JWT_REFRESH_TOKEN_SECRET = "e3b3c972f17f878e1f14cb1585a18792b48711587b4900afe41ff4a6c812c365e0f2b7278edc41436c9a81723bf7cbee867bfcfc0128fff5edaaac0056a81eb9";
-let refeshTokens = [];
+let refreshTokens = [];
 function loadUsers() {
     users = [];
     users.push({ name: "sachin", password: "t_sachin" });
@@ -23,8 +23,10 @@ exports.loginAction = (req, resp) => {
     const reqUser = { name: req.body.name, password: req.body.password };
     const user = users.find(item => item.name === reqUser.name && item.password === reqUser.password);
     if (user) {
-        const accessToken = jsonwebtoken_1.default.sign(user, JWT_ACCESS_TOKEN_SECRET, { expiresIn: '15m' });
-        resp.json({ accessToken });
+        const accessToken = jsonwebtoken_1.default.sign(user, JWT_ACCESS_TOKEN_SECRET, { expiresIn: '15s' });
+        const refreshToken = jsonwebtoken_1.default.sign(user, JWT_REFRESH_TOKEN_SECRET);
+        refreshTokens.push(refreshToken);
+        resp.json({ accessToken, refreshToken });
     }
     else {
         resp.sendStatus(401);
@@ -46,12 +48,12 @@ exports.authorizeProducts = (req, resp, next) => {
     });
 };
 exports.refreshToken = (req, resp) => {
-    //console.log(req.body);
+    console.log("refreshToken", req.body);
     const refeshToken = req.body.token;
     //console.log(refeshToken);
     if (refeshToken == null)
         return resp.sendStatus(401);
-    if (!refeshTokens.includes(refeshToken))
+    if (!refreshTokens.includes(refeshToken))
         return resp.sendStatus(401);
     jsonwebtoken_1.default.verify(refeshToken, JWT_REFRESH_TOKEN_SECRET, (err, user) => {
         if (err) {

@@ -77,7 +77,34 @@ function saveProduct(product) {
             const client = yield mongoClient.connect(mongoUrl, { useUnifiedTopology: true });
             yield client.connect();
             const collection = yield client.db('productsdb').collection('products');
-            collection.save(product, (err, result) => {
+            // collection.save(product, (err, result) => {
+            //     if(err){
+            //         throw err;
+            //     }
+            //     return result.result;
+            // })
+            console.log("calling insert one");
+            collection.insertOne(product, (err, result) => {
+                if (err) {
+                    throw err;
+                }
+                return result.result;
+            });
+        }
+        catch (error) {
+            console.log("error", error);
+            throw error;
+        }
+    });
+}
+function deleteProduct(productId) {
+    return __awaiter(this, void 0, void 0, function* () {
+        try {
+            const mongoUrl = "mongodb://localhost";
+            const client = yield mongoClient.connect(mongoUrl, { useUnifiedTopology: true });
+            yield client.connect();
+            const collection = yield client.db('productsdb').collection('products');
+            collection.deleteOne({ id: productId }, (err, result) => {
                 if (err) {
                     throw err;
                 }
@@ -137,7 +164,7 @@ app.post("/products", (req, resp) => __awaiter(void 0, void 0, void 0, function*
         //const index = products.findIndex(item => item.id === product.id);
         yield saveProduct(product);
         allSockets.forEach(socket => {
-            socket.emit("product", product);
+            socket.emit("productAdded", product);
         });
         resp.sendStatus(200);
     }
@@ -147,25 +174,24 @@ app.post("/products", (req, resp) => __awaiter(void 0, void 0, void 0, function*
         resp.status(500).send();
     }
 }));
-app.delete("/products/:id", (req, resp) => {
+app.delete("/products/:id", (req, resp) => __awaiter(void 0, void 0, void 0, function* () {
     //id exists ==> remove status: 200
     // not exist  ==>  status: 404
     // error ==> 500
-    const id = req.params.id;
     try {
-        const index = products.findIndex(item => item.id === parseInt(id));
-        if (index !== -1) {
-            products.splice(index, 1);
-            resp.status(200).send();
-        }
-        else {
-            resp.status(404).send();
-        }
+        const id = req.params.id;
+        yield deleteProduct(parseInt(id));
+        allSockets.forEach(socket => {
+            socket.emit("productDeleted", id);
+        });
+        resp.sendStatus(200);
     }
     catch (error) {
+        //error
+        console.log(error);
         resp.status(500).send();
     }
-});
+}));
 app.put("/products", (req, resp) => {
     // product not found == 404
     // is found and valid ==> update ==> 200

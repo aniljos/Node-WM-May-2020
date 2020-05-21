@@ -62,10 +62,10 @@ app.use(cors());
 
 app.use(bodyParser.json());
 
-//app.use("/products", authController.authorizeProducts);
+app.use("/products", authController.authorizeProducts);
 
 app.post("/login", authController.loginAction);
-
+app.post("/refreshToken", authController.refreshToken);
 
 app.get("/products", (req, resp) => {
 
@@ -107,7 +107,7 @@ app.post("/products", (req, resp) => {
             });
 
             allSockets.forEach(socket => {
-                socket.emit("product", product);
+                socket.emit("productAdded", product);
             })
 
 
@@ -143,6 +143,9 @@ app.delete("/products/:id", (req, resp) => {
         const index = products.findIndex(item => item.id === parseInt(id))
         if(index !== -1){
             products.splice(index, 1);
+            allSockets.forEach(socket => {
+                socket.emit("productDeleted", id);
+            })
             resp.status(200).send();
         }
         else{

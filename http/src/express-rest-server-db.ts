@@ -63,7 +63,37 @@ async function saveProduct(product: Product) {
         const client = await mongoClient.connect(mongoUrl, { useUnifiedTopology: true });
         await client.connect();
         const collection =  await client.db('productsdb').collection('products');
-        collection.save(product, (err, result) => {
+        // collection.save(product, (err, result) => {
+        //     if(err){
+        //         throw err;
+        //     }
+        //     return result.result;
+        // })
+        console.log("calling insert one")
+        collection.insertOne(product, (err, result) => {
+            if(err){
+                throw err;
+            }
+            return result.result;
+        })
+        
+    } catch (error) {
+        
+        console.log("error", error);
+        throw error;
+    }
+    
+}
+
+async function deleteProduct(productId: number) {
+
+    try {
+        
+        const mongoUrl = "mongodb://localhost";
+        const client = await mongoClient.connect(mongoUrl, { useUnifiedTopology: true });
+        await client.connect();
+        const collection =  await client.db('productsdb').collection('products');
+        collection.deleteOne({id: productId}, (err, result) => {
             if(err){
                 throw err;
             }
@@ -142,7 +172,7 @@ app.post("/products", async (req, resp) => {
         //const index = products.findIndex(item => item.id === product.id);
         await saveProduct(product);
         allSockets.forEach(socket => {
-            socket.emit("product", product);
+            socket.emit("productAdded", product);
         })
         resp.sendStatus(200);
 
@@ -153,24 +183,25 @@ app.post("/products", async (req, resp) => {
     }
 })
 
-app.delete("/products/:id", (req, resp) => {
+app.delete("/products/:id", async (req, resp) => {
 
     //id exists ==> remove status: 200
     // not exist  ==>  status: 404
     // error ==> 500
 
-    const id = req.params.id;
+    
     try {
-        
-        const index = products.findIndex(item => item.id === parseInt(id))
-        if(index !== -1){
-            products.splice(index, 1);
-            resp.status(200).send();
-        }
-        else{
-            resp.status(404).send();
-        }
+
+        const id = req.params.id;
+        await deleteProduct(parseInt(id));
+        allSockets.forEach(socket => {
+            socket.emit("productDeleted", id);
+        })
+        resp.sendStatus(200);
+
     } catch (error) {
+        //error
+        console.log(error);
         resp.status(500).send();
     }
 

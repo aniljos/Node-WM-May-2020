@@ -66,8 +66,9 @@ app.use(cors_1.default());
 //     next();
 // })
 app.use(body_parser_1.default.json());
-//app.use("/products", authController.authorizeProducts);
+app.use("/products", authController.authorizeProducts);
 app.post("/login", authController.loginAction);
+app.post("/refreshToken", authController.refreshToken);
 app.get("/products", (req, resp) => {
     resp.json(products);
 });
@@ -99,7 +100,7 @@ app.post("/products", (req, resp) => {
                 pathname: req.originalUrl + "/" + product.id
             });
             allSockets.forEach(socket => {
-                socket.emit("product", product);
+                socket.emit("productAdded", product);
             });
             resp.status(201).setHeader("location", productUrl);
             resp.end();
@@ -123,6 +124,9 @@ app.delete("/products/:id", (req, resp) => {
         const index = products.findIndex(item => item.id === parseInt(id));
         if (index !== -1) {
             products.splice(index, 1);
+            allSockets.forEach(socket => {
+                socket.emit("productDeleted", id);
+            });
             resp.status(200).send();
         }
         else {
